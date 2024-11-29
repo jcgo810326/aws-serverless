@@ -1,0 +1,11 @@
+{
+    "url": "https://swapi.py4e.com/api/",
+    "resourcesAllowed": [
+        "people",
+        "planets",
+        "films",
+        "species",
+        "vehicles",
+        "starships"
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "id": "/Employee",
+    "type": "object",
+    "properties": {
+        "employee_id": {
+            "type": "string",
+            "maxLength": 64
+        },
+        "first_name": {
+            "type": "string",
+            "maxLength": 64
+        },
+        "last_name": {
+            "type": "string",
+            "maxLength": 64
+        },        
+        "gender": {
+            "type": "string",
+            "maxLength": 64
+        },
+        "birthdate": {
+            "type": "string",
+            "maxLength": 64
+        },        
+        "salary": {
+            "type": "number"
+        },
+        "department": {
+            "type": "string",
+            "maxLength": 64
+        },
+        "boss": {
+            "type": "string",
+            "maxLength": 64
+        },                   
+        "startdate": {
+            "type": "string",
+            "maxLength": 64
+        }
+    },
+    "required": [
+        "employee_id",
+        "first_name",
+        "last_name",
+        "gender",
+        "birthdate",
+        "salary",
+        "department",
+        "boss",
+        "startdate"
+    ]
+}

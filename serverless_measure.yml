@@ -1,0 +1,217 @@
+service: api
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-1
+  stage: dev    
+  lambdaHashingVersion: 20201221
+  environment:
+    REGION: ${self:provider.region}
+    APIGATEWAY_NAME_SWAPI: api/starwars
+    APIGATEWAY_NAME_MEASURE: api/iotmeasure
+    DYNAMODB_NAME_MEASUREMENT: measurement
+    APIGATEWAY_NAME_EMPLOYEE: api/employee
+    EMPLOYEE_TABLE: employee
+    DYNAMODB_LIMIT_QUERY: 10
+
+functions:
+
+  GetSwapi:
+    handler: functions/getSwapi.handler
+    memorySize: 128
+    timeout: 10
+    events:
+      - http:
+          path: /${self:provider.environment.APIGATEWAY_NAME_SWAPI}/{resource}/{idOrSchema}
+          method: GET
+          cors: True
+      - http:
+          path: /${self:provider.environment.APIGATEWAY_NAME_SWAPI}/{resource}
+          method: GET
+          cors: True
+
+  AddMeasure:
+    handler: functions/addMeasure.handler
+    memorySize: 128
+    role: !GetAtt RoleIAMaddMeasure.Arn
+    timeout: 3
+    events:
+      - http:
+          path: /${self:provider.environment.APIGATEWAY_NAME_MEASURE}/add
+          method: POST
+          cors: True
+
+  GetMeasure:
+    handler: functions/getMeasure.handler
+    memorySize: 128
+    role: !GetAtt RoleIAMgetMeasure.Arn
+    timeout: 10
+    events:
+      - http:
+          path: /${self:provider.environment.APIGATEWAY_NAME_MEASURE}/get/{iDdevice}
+          method: GET
+          cors: True
+
+  AddEmployee:
+    handler: functions/addEmployee.handler
+    memorySize: 128
+    role: !GetAtt RoleIAMaddEmployee.Arn
+    timeout: 3
+    events:
+      - http:
+          path: /${self:provider.environment.APIGATEWAY_NAME_EMPLOYEE}/add
+          method: POST
+          cors: True    
+
+  GetEmployee:
+    handler: functions/getEmployee.handler
+    memorySize: 128
+    role: !GetAtt RoleIAMgetEmployee.Arn
+    timeout: 10
+    events:
+      - http:
+          path: /${self:provider.environment.APIGATEWAY_NAME_EMPLOYEE}/get/{employee_id}
+          method: GET
+          cors: True          
+
+resources:
+  Resources:
+    RecordsTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_NAME_MEASUREMENT}
+        AttributeDefinitions:
+          - AttributeName: device_id
+            AttributeType: S    
+          - AttributeName: sample_time
+            AttributeType: N                             
+        BillingMode: PAY_PER_REQUEST    
+        KeySchema:
+          - AttributeName: device_id
+            KeyType: HASH  
+          - AttributeName: sample_time
+            KeyType: RANGE
+
+        TableName: ${self:provider.environment.EMPLOYEE_TABLE}
+        AttributeDefinitions:
+          - AttributeName: employee_id
+            AttributeType: S                           
+        BillingMode: PAY_PER_REQUEST    
+        KeySchema:
+          - AttributeName: employee_id
+            KeyType: HASH            
+
+    RoleIAMgetMeasure:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: RoleIAMgetMeasure
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: lambda.amazonaws.com
+        Policies:
+          - PolicyName: RoleIAMgetMeasurePolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    - "*"     
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query                              
+                  Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_NAME_MEASUREMENT}"  
+
+    RoleIAMaddMeasure:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: RoleIAMaddMeasure
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: lambda.amazonaws.com
+        Policies:
+          - PolicyName: RoleIAMaddMeasurePolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    - "*"     
+                - Effect: Allow
+                  Action:
+                    - dynamodb:PutItem                              
+                  Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_NAME_MEASUREMENT}"
+
+    RoleIAMaddEmployee:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: RoleIAMaddEmployee
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: lambda.amazonaws.com
+        Policies:
+          - PolicyName: RoleIAMaddEmployeePolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    - "*"     
+                - Effect: Allow
+                  Action:
+                    - dynamodb:PutItem                              
+                  Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.EMPLOYEE_TABLE}"
+
+    RoleIAMgetEmployee:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: RoleIAMgetEmployee
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: lambda.amazonaws.com
+        Policies:
+          - PolicyName: RoleIAMgetEmployeePolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    - "*"     
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query                              
+                  Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.EMPLOYEE_TABLE}"  
